@@ -1,0 +1,36 @@
+name: Release design-notebook
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Package design-notebook skill
+        run: |
+          cd plugins/design-notebook/skills
+          zip -r "$GITHUB_WORKSPACE/design-notebook-${{ steps.version.outputs.version }}.zip" design-notebook/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            "design-notebook-${{ steps.version.outputs.version }}.zip" \
+            --title "design-notebook ${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            --notes-start-tag "" \
+            --latest \
+            --verify-tag
