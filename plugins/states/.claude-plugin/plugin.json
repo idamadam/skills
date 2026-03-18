@@ -1,0 +1,5 @@
+{
+  "name": "states",
+  "description": "Add an in-context control panel to a React interface that reveals its hidden variations.",
+  "skills": ["./skills/states"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "idam-skills",
+  "owner": { "name": "Idam Adam" },
+  "plugins": [
+    {
+      "name": "design-notebook",
+      "source": "./plugins/design-notebook",
+      "description": "Scaffold a design iteration notebook for exploring UI concepts through rapid, intent-driven variation."
+    },
+    {
+      "name": "states",
+      "source": "./plugins/states",
+      "description": "Add an in-context control panel to a React interface that reveals its hidden variations."
+    }
+  ]
+}
