@@ -66,51 +66,60 @@ Use this when the working directory is empty or has no React framework.
 
 ### Path B: Inject into existing React project (framework detected)
 
-1. Create `src/design-notebooks/` (or the equivalent source directory)
-2. Copy harness files into it:
-   - `IterateApp.tsx`, `chrome.tsx`, `state-explorer.tsx`, `types.ts`
-   - `notebook.css`
-   - `iterations/` with baseline template
-3. Wire the framework-specific entry point (see table below)
+Each notebook gets a **slug** — a lowercase-kebab-case name derived from
+the user's topic (e.g. "nav redesign" → `nav-redesign`). If the user
+doesn't provide one, ask.
+
+Each notebook is a self-contained copy of the harness under
+`src/design-notebooks/<slug>/`. This means multiple notebooks can coexist
+side-by-side without interfering with each other.
+
+1. Create `src/design-notebooks/<slug>/`
+2. Copy all harness files into it (same as today — IterateApp, chrome,
+   state-explorer, types, notebook.css, iterations with baseline, etc.)
+3. Wire a framework-specific entry point using the slug (see table below)
 4. Offer to install `agentation` to provide direct manipulation of components
-5. Copy `template/AGENTS.md` into the design-notebooks directory
+5. Copy `template/AGENTS.md` into the notebook directory
 6. Create a symlink in the same directory: `CLAUDE.md → AGENTS.md`
+
+When the user asks for another notebook, repeat with a new slug.
+Existing notebooks are untouched.
 
 **Framework-specific entry point wiring:**
 
 | Framework | What to create | How to wire |
 |-----------|---------------|-------------|
-| **Vite** | `design-notebooks.html` at project root with `<script type="module" src="/src/design-notebooks/main.tsx">` | Add to `build.rollupOptions.input` in `vite.config.*` |
-| **Next.js App Router** | `app/design-notebooks/page.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
-| **Next.js Pages Router** | `pages/design-notebooks.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
-| **Remix** | `app/routes/design-notebooks.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
-| **Astro** | `src/pages/design-notebooks.astro` with `<IterateApp client:only="react" />` | No config changes needed |
+| **Vite** | `design-notebooks/<slug>.html` at project root with `<script type="module" src="/src/design-notebooks/<slug>/main.tsx">` | Add to `build.rollupOptions.input` in `vite.config.*` |
+| **Next.js App Router** | `app/design-notebooks/<slug>/page.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
+| **Next.js Pages Router** | `pages/design-notebooks/<slug>.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
+| **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
+| **Astro** | `src/pages/design-notebooks/<slug>.astro` with `<IterateApp client:only="react" />` | No config changes needed |
 
 For inject entry points (Next.js, Remix, Astro), create a page component that:
-1. Imports `../design-notebooks/notebook.css` (or appropriate relative path)
-2. Imports and renders `IterateApp` from the design-notebooks directory
+1. Imports the notebook's `notebook.css` (adjust relative path for the slug subdirectory)
+2. Imports and renders `IterateApp` from the notebook's directory
 3. For Next.js: wrap in `'use client'` directive
 
-For Vite inject, create `design-notebooks.html`:
+For Vite inject, create `design-notebooks/<slug>.html`:
 ```html
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Design Notebook</title>
+    <title>Design Notebook — <slug></title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/design-notebooks/main.tsx"></script>
+    <script type="module" src="/src/design-notebooks/<slug>/main.tsx"></script>
   </body>
 </html>
 ```
 
-For injected projects, create a `main.tsx` inside `src/design-notebooks/`:
+For injected projects, create a `main.tsx` inside `src/design-notebooks/<slug>/`:
 ```tsx
 import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -131,7 +140,7 @@ createRoot(document.getElementById('root')!).render(
 )
 ```
 
-Also create `src/design-notebooks/index.css`:
+Also create `src/design-notebooks/<slug>/index.css`:
 ```css
 @import 'tailwindcss';
 @import './notebook.css';
@@ -139,7 +148,7 @@ Also create `src/design-notebooks/index.css`:
 
 **Important:** When injecting, update import paths in the copied files.
 The template files use relative imports like `./types`, `./chrome`, etc.
-These should work as-is when all files are in the same `design-notebooks/` directory.
+These should work as-is when all files are in the same notebook directory.
 The `iterations/` imports (`./iterations`) also work since the folder is copied alongside.
 
 ### Path C: Artifact output (Claude web app / single-file mode)
@@ -234,6 +243,11 @@ iterations/
     Content.tsx
     controls.tsx
 ```
+
+When creating a new iteration, **copy the previous iteration's folder**
+(`cp -r iterations/baseline/ iterations/v2/`) and edit the copy.
+Do not rewrite files from scratch — start from the last iteration and
+modify what changed.
 
 Each folder is a **complete copy** — duplicate components freely,
 no shared primitives between iterations. However, iterations CAN
