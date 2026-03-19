@@ -18,6 +18,11 @@ jobs:
         id: version
         run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
+      - name: Use artifact-only SKILL.md for release
+        run: |
+          cp plugins/design-notebook/skills/design-notebook/SKILL-artifact.md \
+             plugins/design-notebook/skills/design-notebook/SKILL.md
+
       - name: Package design-notebook skill
         run: |
           cd plugins/design-notebook/skills

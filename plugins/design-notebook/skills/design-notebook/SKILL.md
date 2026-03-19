@@ -41,14 +41,6 @@ Check for:
 - `*.module.css` files → **CSS Modules**
 - `styled-components` or `@emotion` in package.json → **CSS-in-JS**
 
-### Runtime environment
-
-Detect whether the output should be a **single artifact file** (Path C):
-- User says "artifact", "claude.ai", or "single file"
-- Conversation is running inside Claude's web app (no filesystem dev server)
-
-If artifact mode is detected, use Path C below. Otherwise, continue to Path A or B.
-
 ## Step 2: Choose Scaffold Path
 
 ### Path A: Standalone project (no framework detected)
@@ -151,23 +143,6 @@ The template files use relative imports like `./types`, `./chrome`, etc.
 These should work as-is when all files are in the same notebook directory.
 The `iterations/` imports (`./iterations`) also work since the folder is copied alongside.
 
-### Path C: Artifact output (Claude web app / single-file mode)
-
-Use this when the notebook must render as a single `.jsx` artifact — typically
-inside Claude's web app where there is no dev server.
-
-1. Scaffold the same files as Path A (copy `template/` contents, install deps).
-   The full project is still useful for type checking and local preview.
-2. `build-artifact.js` is included in the template — it bundles everything into
-   one artifact-compatible `.jsx` file.
-3. Workflow:
-   - Edit iteration files normally under `src/iterations/`
-   - Run `npm run build:artifact` (or `node build-artifact.js`)
-   - Present the generated `design-notebook.jsx` via `present_files` tool
-4. **Important:** iteration content must use **inline styles only** — there is
-   no Tailwind compiler in artifact mode. The notebook chrome CSS (from
-   `notebook.css`) is embedded automatically by the build script.
-
 ## Step 3: Set the Project Context
 
 After scaffolding, ask the user what they're iterating on. Use their answer
@@ -204,13 +179,6 @@ Then begin the iteration workflow as described in AGENTS.md.
 
 Once the notebook is scaffolded, follow the workflow documented in AGENTS.md
 (which was placed in the project root during scaffolding). The core loop:
-
-### Path C iteration workflow
-
-When using artifact mode (Path C), after creating or editing iterations:
-1. Run `npm run build:artifact` to rebuild the single-file artifact
-2. Use `present_files` tool to show the generated `design-notebook.jsx`
-3. Same conventions apply: append-only ITERATIONS, presets, semantic diffs
 
 ### Sharpen
 Ask 2-3 clarifying questions before generating. Target: scope, tone,
