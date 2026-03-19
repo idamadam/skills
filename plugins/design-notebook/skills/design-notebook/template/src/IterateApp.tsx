@@ -293,7 +293,7 @@ export default function IterateApp() {
                 </h1>
               </div>
               <a
-                href="https://google.com"
+                href="https://forms.gle/tgWrQPEvzAF2Z7rw9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="nb-feedback-link"
