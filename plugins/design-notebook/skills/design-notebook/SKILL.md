@@ -98,6 +98,9 @@ Then begin the iteration workflow as described in AGENTS.md.
 Once the notebook is scaffolded, follow the workflow documented in AGENTS.md
 (which was placed in the project root during scaffolding). The core loop:
 
+### Refine or Diverge?
+When the user requests a change, ask whether to **refine** the current iteration in-place or **diverge** into a new one. Small fixes (copy, spacing, colours) usually refine; new concepts or structural changes usually diverge.
+
 ### Sharpen
 Ask 2-3 clarifying questions before generating. Target: scope, tone,
 constraints, reference points.

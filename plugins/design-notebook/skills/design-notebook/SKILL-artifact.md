@@ -55,6 +55,9 @@ After creating or editing iterations:
 2. Use `present_files` tool to show the generated `design-notebook.jsx`
 3. Same conventions apply: append-only ITERATIONS, presets, semantic diffs
 
+### Refine or Diverge?
+When the user requests a change, ask whether to **refine** the current iteration in-place or **diverge** into a new one. Small fixes (copy, spacing, colours) usually refine; new concepts or structural changes usually diverge.
+
 ### Sharpen
 Ask 2-3 clarifying questions before generating. Target: scope, tone,
 constraints, reference points.
