@@ -109,6 +109,11 @@ imports `notebook.css` from `_harness/` and renders `NotebookApp` from `_harness
 passing `iterations={ITERATIONS}` and `project={PROJECT}` from the notebook's
 own `iterations/index.ts`. For Next.js, add `'use client'` directive.
 
+**Import paths:** Check `tsconfig.json`/`jsconfig.json` for path aliases
+(e.g. `@/*`, `~/`). If the project has one configured, use it
+(e.g. `@/design-notebooks/_harness/NotebookApp`). Otherwise use relative
+paths from the entry point file.
+
 ## Step 2: Set the Project Context
 
 After scaffolding, ask the user what they're iterating on. Use their answer
