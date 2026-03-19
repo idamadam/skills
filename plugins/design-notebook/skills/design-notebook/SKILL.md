@@ -12,38 +12,9 @@ Scaffold and run a design iteration notebook — a vertical canvas where each
 iteration shows what changed and why, with side-by-side comparisons for
 divergent exploration and a decision trail that records every step.
 
-## Step 1: Detect the Environment
+## Step 1: Choose Scaffold Path
 
-Before scaffolding, detect what already exists in the working directory.
-
-### Package manager
-
-Check for lock files in this order:
-- `bun.lockb` → **bun**
-- `pnpm-lock.yaml` → **pnpm**
-- `yarn.lock` → **yarn**
-- `package-lock.json` → **npm**
-- None found → default to **npm**
-
-### Framework
-
-Check for config files:
-- `next.config.*` → **Next.js** (then check: `app/` dir exists → App Router, else Pages Router)
-- `vite.config.*` → **Vite**
-- `remix.config.*` or `app/root.tsx` with `@remix-run` → **Remix**
-- `astro.config.*` → **Astro**
-- None found → **no framework detected**
-
-### Styling
-
-Check for:
-- `tailwind.config.*` or `@import 'tailwindcss'` in CSS → **Tailwind**
-- `*.module.css` files → **CSS Modules**
-- `styled-components` or `@emotion` in package.json → **CSS-in-JS**
-
-## Step 2: Choose Scaffold Path
-
-### Path A: Standalone project (no framework detected)
+### Path A: Standalone project (no existing React framework)
 
 Use this when the working directory is empty or has no React framework.
 
@@ -53,10 +24,10 @@ Use this when the working directory is empty or has no React framework.
    - `src/iterations/` with baseline template
 2. Copy `template/AGENTS.md` to the project root
 3. Create a symlink: `CLAUDE.md → AGENTS.md`
-4. Install dependencies using the detected package manager
+4. Install dependencies using the project's package manager
 5. Start the dev server
 
-### Path B: Inject into existing React project (framework detected)
+### Path B: Inject into existing React project
 
 Each notebook gets a **slug** — a lowercase-kebab-case name derived from
 the user's topic (e.g. "nav redesign" → `nav-redesign`). If the user
@@ -70,9 +41,8 @@ side-by-side without interfering with each other.
 2. Copy all harness files into it (same as today — IterateApp, chrome,
    state-explorer, types, notebook.css, iterations with baseline, etc.)
 3. Wire a framework-specific entry point using the slug (see table below)
-4. Offer to install `agentation` to provide direct manipulation of components
-5. Copy `template/AGENTS.md` into the notebook directory
-6. Create a symlink in the same directory: `CLAUDE.md → AGENTS.md`
+4. Copy `template/AGENTS.md` into the notebook directory
+5. Create a symlink in the same directory: `CLAUDE.md → AGENTS.md`
 
 When the user asks for another notebook, repeat with a new slug.
 Existing notebooks are untouched.
@@ -87,73 +57,21 @@ Existing notebooks are untouched.
 | **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
 | **Astro** | `src/pages/design-notebooks/<slug>.astro` with `<IterateApp client:only="react" />` | No config changes needed |
 
-For inject entry points (Next.js, Remix, Astro), create a page component that:
-1. Imports the notebook's `notebook.css` (adjust relative path for the slug subdirectory)
-2. Imports and renders `IterateApp` from the notebook's directory
-3. For Next.js: wrap in `'use client'` directive
+For inject entry points (Next.js, Remix, Astro), create a page component that
+imports `notebook.css` and renders `IterateApp` from the notebook's directory.
+For Next.js, add `'use client'` directive.
 
-For Vite inject, create `design-notebooks/<slug>.html`:
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Design Notebook — <slug></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/design-notebooks/<slug>/main.tsx"></script>
-  </body>
-</html>
-```
+For Vite inject, copy `template/inject/entry.html` to
+`design-notebooks/<slug>.html` at the project root, replacing `__SLUG__`
+with the notebook slug.
 
-For injected projects, create a `main.tsx` inside `src/design-notebooks/<slug>/`:
-```tsx
-import { StrictMode, lazy, Suspense } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import IterateApp from './IterateApp'
+Copy `template/inject/main.tsx` and `template/inject/index.css` into
+`src/design-notebooks/<slug>/`.
 
-const Agentation = lazy(() =>
-  import('agentation').then(m => ({ default: m.Agentation })).catch(() => ({ default: () => null }))
-)
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <IterateApp />
-    <Suspense>
-      <Agentation />
-    </Suspense>
-  </StrictMode>,
-)
-```
-
-Also create `src/design-notebooks/<slug>/index.css`:
-```css
-@import 'tailwindcss';
-@import './notebook.css';
-```
-
-**Important:** When injecting, update import paths in the copied files.
-The template files use relative imports like `./types`, `./chrome`, etc.
-These should work as-is when all files are in the same notebook directory.
-The `iterations/` imports (`./iterations`) also work since the folder is copied alongside.
-
-## Step 3: Set the Project Context
+## Step 2: Set the Project Context
 
 After scaffolding, ask the user what they're iterating on. Use their answer
-to set the `PROJECT` metadata in `iterations/index.ts`:
-
-```ts
-export const PROJECT = {
-  title: 'Navigation redesign',
-  description: ['Exploring header patterns for the dashboard'],
-}
-```
+to set the `PROJECT` metadata in `iterations/index.ts`.
 
 ### Populate the baseline (Path B only)
 
