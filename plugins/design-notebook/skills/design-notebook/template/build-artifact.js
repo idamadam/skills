@@ -3,7 +3,7 @@
  *
  * Usage: node build-artifact.js
  *
- * Bundles NotebookApp.tsx and all its imports into a self-contained .jsx
+ * Bundles NotebookApp, iterations, and all imports into a self-contained .jsx
  * file that works inside Claude's artifact renderer (no dev server needed).
  *
  * Key constraints the artifact renderer imposes:
@@ -42,11 +42,20 @@ writeFileSync(join(BUILD_DIR, 'tsconfig.json'), JSON.stringify({
   },
 }, null, 2))
 
-// ── Step 3: Bundle with esbuild ──
+// ── Step 3: Write a shim entry point that pulls in NotebookApp + iterations ──
+
+const shimPath = join(BUILD_DIR, '_entry.ts')
+writeFileSync(shimPath, [
+  `import NotebookApp from './NotebookApp'`,
+  `import { ITERATIONS, PROJECT } from './iterations'`,
+  `export { NotebookApp, ITERATIONS, PROJECT }`,
+].join('\n'))
+
+// ── Step 4: Bundle with esbuild ──
 
 const esbuildCmd = [
   'npx esbuild',
-  join(BUILD_DIR, 'NotebookApp.tsx'),
+  shimPath,
   '--bundle',
   '--format=esm',
   '--jsx=transform',
@@ -62,7 +71,7 @@ const esbuildCmd = [
 console.log('Bundling with esbuild...')
 execSync(esbuildCmd, { stdio: 'inherit' })
 
-// ── Step 4: Read bundle, strip react imports ──
+// ── Step 5: Read bundle, strip react imports & shim exports ──
 
 let bundle = readFileSync(join(BUILD_DIR, 'bundle.js'), 'utf-8')
 
@@ -90,13 +99,17 @@ for (const name of reactHooks) {
   bundle = bundle.replace(re, name)
 }
 
-// ── Step 5: Read notebook.css ──
+// Strip export lines emitted by esbuild from the shim so the only
+// export default in the final file is the artifact wrapper's.
+bundle = bundle.replace(/^export\s*\{[^}]*\}\s*;?\s*$/gm, '')
+
+// ── Step 6: Read notebook.css ──
 
 const css = readFileSync(join(__dirname, 'src', 'notebook.css'), 'utf-8')
   .replace(/`/g, '\\`')
   .replace(/\$/g, '\\$')
 
-// ── Step 6: Assemble the artifact wrapper ──
+// ── Step 7: Assemble the artifact wrapper ──
 
 const artifact = `\
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
@@ -146,16 +159,16 @@ ${bundle}
 export default function DesignNotebookArtifact() {
   useStyles();
   useFonts();
-  return React.createElement(NotebookApp, null);
+  return React.createElement(NotebookApp, { iterations: ITERATIONS, project: PROJECT });
 }
 `
 
-// ── Step 7: Write output ──
+// ── Step 8: Write output ──
 
 writeFileSync(OUTPUT_FILE, artifact, 'utf-8')
 console.log(`✓ Artifact written to design-notebook.jsx`)
 
-// ── Step 8: Clean up ──
+// ── Step 9: Clean up ──
 
 rmSync(BUILD_DIR, { recursive: true })
 console.log('✓ Build directory cleaned up')
