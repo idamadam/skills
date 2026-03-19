@@ -16,11 +16,16 @@ This notebook renders as a single artifact file. No dev server needed.
 
 ## Step 1: Scaffold
 
-Copy the entire `template/` directory contents into the working directory:
-- `package.json`, `tsconfig.json`
-- `src/` with all harness files (IterateApp, chrome, state-explorer, types, notebook.css, index.css)
-- `src/iterations/` with baseline template
-- `build-artifact.js`
+The template directory is at `template/` relative to this SKILL.md file.
+Use `cp` commands to copy files — do NOT read and rewrite them.
+
+```bash
+# Copy project config and build script
+cp template/package.json template/tsconfig.json template/build-artifact.js .
+
+# Copy all source files
+cp -r template/src .
+```
 
 No `npm install` needed — the artifact renderer provides React, and the
 build script uses `npx esbuild` which downloads on demand.

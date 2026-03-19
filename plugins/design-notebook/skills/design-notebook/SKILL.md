@@ -18,14 +18,23 @@ divergent exploration and a decision trail that records every step.
 
 Use this when the working directory is empty or has no React framework.
 
-1. Copy the entire `template/` directory contents into the working directory:
-   - `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`
-   - `src/` with all harness files (IterateApp, chrome, state-explorer, types, notebook.css, index.css)
-   - `src/iterations/` with baseline template
-2. Copy `template/AGENTS.md` to the project root
-3. Create a symlink: `CLAUDE.md → AGENTS.md`
-4. Install dependencies using the project's package manager
-5. Start the dev server
+The template directory is at `template/` relative to this SKILL.md file.
+Use `cp` commands to copy files — do NOT read and rewrite them.
+
+```bash
+# Copy project config files
+cp template/package.json template/tsconfig.json template/vite.config.ts template/index.html .
+
+# Copy all source files
+cp -r template/src .
+
+# Copy AGENTS.md and symlink CLAUDE.md
+cp template/AGENTS.md .
+ln -s AGENTS.md CLAUDE.md
+
+# Install dependencies and start dev server
+npm install && npm run dev
+```
 
 ### Path B: Inject into existing React project
 
@@ -33,40 +42,71 @@ Each notebook gets a **slug** — a lowercase-kebab-case name derived from
 the user's topic (e.g. "nav redesign" → `nav-redesign`). If the user
 doesn't provide one, ask.
 
-Each notebook is a self-contained copy of the harness under
-`src/design-notebooks/<slug>/`. This means multiple notebooks can coexist
-side-by-side without interfering with each other.
+The harness (IterateApp, chrome, state-explorer, etc.) is shared across
+all notebooks. It lives in `src/design-notebooks/_harness/` and is copied
+once. Each notebook only contains its own `iterations/`, `main.tsx`, and
+`index.css`.
 
-1. Create `src/design-notebooks/<slug>/`
-2. Copy all harness files into it (same as today — IterateApp, chrome,
-   state-explorer, types, notebook.css, iterations with baseline, etc.)
-3. Wire a framework-specific entry point using the slug (see table below)
-4. Copy `template/AGENTS.md` into the notebook directory
-5. Create a symlink in the same directory: `CLAUDE.md → AGENTS.md`
+```
+src/design-notebooks/
+  _harness/          ← shared, copied once from template/src
+    IterateApp.tsx
+    chrome.tsx
+    state-explorer.tsx
+    types.ts
+    notebook.css
+  CLAUDE.md          ← copied once
+  <slug>/            ← per notebook
+    main.tsx
+    index.css
+    iterations/
+      index.ts
+      baseline/
+```
 
-When the user asks for another notebook, repeat with a new slug.
-Existing notebooks are untouched.
+The template directory is at `template/` relative to this SKILL.md file.
+Use `cp` commands to copy files — do NOT read and rewrite them.
+
+**First notebook** (sets up harness + first notebook):
+
+```bash
+# Copy shared harness files
+mkdir -p src/design-notebooks/_harness
+cp template/src/IterateApp.tsx template/src/chrome.tsx template/src/state-explorer.tsx template/src/types.ts template/src/notebook.css src/design-notebooks/_harness/
+
+# Copy CLAUDE.md
+cp template/AGENTS.md src/design-notebooks/CLAUDE.md
+
+# Create the notebook
+mkdir -p src/design-notebooks/<slug>/iterations
+cp -r template/src/iterations/* src/design-notebooks/<slug>/iterations/
+cp template/inject/main.tsx template/inject/index.css src/design-notebooks/<slug>/
+```
+
+**Additional notebooks** (harness already exists):
+
+```bash
+mkdir -p src/design-notebooks/<slug>/iterations
+cp -r template/src/iterations/* src/design-notebooks/<slug>/iterations/
+cp template/inject/main.tsx template/inject/index.css src/design-notebooks/<slug>/
+```
+
+Then wire a framework-specific entry point using the slug (see table below).
 
 **Framework-specific entry point wiring:**
 
 | Framework | What to create | How to wire |
 |-----------|---------------|-------------|
-| **Vite** | `design-notebooks/<slug>.html` at project root with `<script type="module" src="/src/design-notebooks/<slug>/main.tsx">` | Add to `build.rollupOptions.input` in `vite.config.*` |
-| **Next.js App Router** | `app/design-notebooks/<slug>/page.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
-| **Next.js Pages Router** | `pages/design-notebooks/<slug>.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
-| **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders IterateApp | No config changes needed — file-based routing |
+| **Vite** | `design-notebooks/<slug>.html` at project root | Copy `template/inject/entry.html`, replace `__SLUG__` with the notebook slug. Add to `build.rollupOptions.input` in `vite.config.*` |
+| **Next.js App Router** | `app/design-notebooks/<slug>/page.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
+| **Next.js Pages Router** | `pages/design-notebooks/<slug>.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
+| **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
 | **Astro** | `src/pages/design-notebooks/<slug>.astro` with `<IterateApp client:only="react" />` | No config changes needed |
 
 For inject entry points (Next.js, Remix, Astro), create a page component that
-imports `notebook.css` and renders `IterateApp` from the notebook's directory.
-For Next.js, add `'use client'` directive.
-
-For Vite inject, copy `template/inject/entry.html` to
-`design-notebooks/<slug>.html` at the project root, replacing `__SLUG__`
-with the notebook slug.
-
-Copy `template/inject/main.tsx` and `template/inject/index.css` into
-`src/design-notebooks/<slug>/`.
+imports `notebook.css` from `_harness/` and renders `IterateApp` from `_harness/`,
+passing `iterations={ITERATIONS}` and `project={PROJECT}` from the notebook's
+own `iterations/index.ts`. For Next.js, add `'use client'` directive.
 
 ## Step 2: Set the Project Context
 

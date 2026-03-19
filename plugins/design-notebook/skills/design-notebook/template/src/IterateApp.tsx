@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { IterationChrome } from './chrome'
 import { StateExplorer } from './state-explorer'
 import type { ChromeProps, Preset, IterationDefinition, IterationDefinitionEntry } from './types'
-import { ITERATIONS, PROJECT } from './iterations'
+
+interface IterateAppProps {
+  iterations: IterationDefinitionEntry[]
+  project: { title: string; description: string[] }
+}
 
 function isGroup(entry: IterationDefinitionEntry): entry is { group: IterationDefinition[] } {
   return 'group' in entry
@@ -91,7 +95,7 @@ function trailChanges(entry: IterationDefinitionEntry): string[] | undefined {
 
 /* -- Main app -- */
 
-export default function IterateApp() {
+export default function IterateApp({ iterations: ITERATIONS, project: PROJECT }: IterateAppProps) {
   const [iterationStates, setIterationStates] = useState<Record<string, Record<string, unknown>>>({})
   const [expandedHistoryIndex, setExpandedHistoryIndex] = useState<number | null>(null)
 
