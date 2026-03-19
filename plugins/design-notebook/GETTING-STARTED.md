@@ -32,7 +32,7 @@ Run in your project directory:
 npx skills add idamadam/skills --skill design-notebook
 ```
 
-The agent will look for the best place to set it up in your project.
+Once installed, ask the agent to "set up a design notebook for this project".
 
 ## Claude.ai webapp
 
