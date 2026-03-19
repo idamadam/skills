@@ -3,7 +3,7 @@ import { IterationChrome } from './chrome'
 import { StateExplorer } from './state-explorer'
 import type { ChromeProps, Preset, IterationDefinition, IterationDefinitionEntry } from './types'
 
-interface IterateAppProps {
+interface NotebookAppProps {
   iterations: IterationDefinitionEntry[]
   project: { title: string; description: string[] }
 }
@@ -95,7 +95,7 @@ function trailChanges(entry: IterationDefinitionEntry): string[] | undefined {
 
 /* -- Main app -- */
 
-export default function IterateApp({ iterations: ITERATIONS, project: PROJECT }: IterateAppProps) {
+export default function NotebookApp({ iterations: ITERATIONS, project: PROJECT }: NotebookAppProps) {
   const [iterationStates, setIterationStates] = useState<Record<string, Record<string, unknown>>>({})
   const [expandedHistoryIndex, setExpandedHistoryIndex] = useState<number | null>(null)
 

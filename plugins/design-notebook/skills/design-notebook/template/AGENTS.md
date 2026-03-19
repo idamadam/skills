@@ -6,7 +6,7 @@ with lightweight chrome showing what changed and why.
 
 ## Workspace Structure
 
-Key files: `IterateApp.tsx` (app shell), `chrome.tsx` (iteration wrapper),
+Key files: `NotebookApp.tsx` (app shell), `chrome.tsx` (iteration wrapper),
 `state-explorer.tsx` (preset popover), `types.ts` (shared interfaces),
 `iterations/index.ts` (iteration registry + `PROJECT` metadata).
 

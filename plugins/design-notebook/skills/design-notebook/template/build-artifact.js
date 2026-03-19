@@ -3,7 +3,7 @@
  *
  * Usage: node build-artifact.js
  *
- * Bundles IterateApp.tsx and all its imports into a self-contained .jsx
+ * Bundles NotebookApp.tsx and all its imports into a self-contained .jsx
  * file that works inside Claude's artifact renderer (no dev server needed).
  *
  * Key constraints the artifact renderer imposes:
@@ -46,7 +46,7 @@ writeFileSync(join(BUILD_DIR, 'tsconfig.json'), JSON.stringify({
 
 const esbuildCmd = [
   'npx esbuild',
-  join(BUILD_DIR, 'IterateApp.tsx'),
+  join(BUILD_DIR, 'NotebookApp.tsx'),
   '--bundle',
   '--format=esm',
   '--jsx=transform',
@@ -146,7 +146,7 @@ ${bundle}
 export default function DesignNotebookArtifact() {
   useStyles();
   useFonts();
-  return React.createElement(IterateApp, null);
+  return React.createElement(NotebookApp, null);
 }
 `
 

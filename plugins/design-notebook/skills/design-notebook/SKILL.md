@@ -42,7 +42,7 @@ Each notebook gets a **slug** — a lowercase-kebab-case name derived from
 the user's topic (e.g. "nav redesign" → `nav-redesign`). If the user
 doesn't provide one, ask.
 
-The harness (IterateApp, chrome, state-explorer, etc.) is shared across
+The harness (NotebookApp, chrome, state-explorer, etc.) is shared across
 all notebooks. It lives in `src/design-notebooks/_harness/` and is copied
 once. Each notebook only contains its own `iterations/`, `main.tsx`, and
 `index.css`.
@@ -50,7 +50,7 @@ once. Each notebook only contains its own `iterations/`, `main.tsx`, and
 ```
 src/design-notebooks/
   _harness/          ← shared, copied once from template/src
-    IterateApp.tsx
+    NotebookApp.tsx
     chrome.tsx
     state-explorer.tsx
     types.ts
@@ -59,6 +59,7 @@ src/design-notebooks/
   <slug>/            ← per notebook
     main.tsx
     index.css
+    types.ts         ← re-exports from _harness/types
     iterations/
       index.ts
       baseline/
@@ -72,7 +73,7 @@ Use `cp` commands to copy files — do NOT read and rewrite them.
 ```bash
 # Copy shared harness files
 mkdir -p src/design-notebooks/_harness
-cp template/src/IterateApp.tsx template/src/chrome.tsx template/src/state-explorer.tsx template/src/types.ts template/src/notebook.css src/design-notebooks/_harness/
+cp template/src/NotebookApp.tsx template/src/chrome.tsx template/src/state-explorer.tsx template/src/types.ts template/src/notebook.css src/design-notebooks/_harness/
 
 # Copy CLAUDE.md
 cp template/AGENTS.md src/design-notebooks/CLAUDE.md
@@ -80,7 +81,7 @@ cp template/AGENTS.md src/design-notebooks/CLAUDE.md
 # Create the notebook
 mkdir -p src/design-notebooks/<slug>/iterations
 cp -r template/src/iterations/* src/design-notebooks/<slug>/iterations/
-cp template/inject/main.tsx template/inject/index.css src/design-notebooks/<slug>/
+cp template/inject/main.tsx template/inject/index.css template/inject/types.ts src/design-notebooks/<slug>/
 ```
 
 **Additional notebooks** (harness already exists):
@@ -88,7 +89,7 @@ cp template/inject/main.tsx template/inject/index.css src/design-notebooks/<slug
 ```bash
 mkdir -p src/design-notebooks/<slug>/iterations
 cp -r template/src/iterations/* src/design-notebooks/<slug>/iterations/
-cp template/inject/main.tsx template/inject/index.css src/design-notebooks/<slug>/
+cp template/inject/main.tsx template/inject/index.css template/inject/types.ts src/design-notebooks/<slug>/
 ```
 
 Then wire a framework-specific entry point using the slug (see table below).
@@ -98,13 +99,13 @@ Then wire a framework-specific entry point using the slug (see table below).
 | Framework | What to create | How to wire |
 |-----------|---------------|-------------|
 | **Vite** | `design-notebooks/<slug>.html` at project root | Copy `template/inject/entry.html`, replace `__SLUG__` with the notebook slug. Add to `build.rollupOptions.input` in `vite.config.*` |
-| **Next.js App Router** | `app/design-notebooks/<slug>/page.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
-| **Next.js Pages Router** | `pages/design-notebooks/<slug>.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
-| **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders IterateApp from `_harness/` | No config changes needed — file-based routing |
-| **Astro** | `src/pages/design-notebooks/<slug>.astro` with `<IterateApp client:only="react" />` | No config changes needed |
+| **Next.js App Router** | `app/design-notebooks/<slug>/page.tsx` that imports and renders NotebookApp from `_harness/` | No config changes needed — file-based routing |
+| **Next.js Pages Router** | `pages/design-notebooks/<slug>.tsx` that imports and renders NotebookApp from `_harness/` | No config changes needed — file-based routing |
+| **Remix** | `app/routes/design-notebooks.<slug>.tsx` that imports and renders NotebookApp from `_harness/` | No config changes needed — file-based routing |
+| **Astro** | `src/pages/design-notebooks/<slug>.astro` with `<NotebookApp client:only="react" />` | No config changes needed |
 
 For inject entry points (Next.js, Remix, Astro), create a page component that
-imports `notebook.css` from `_harness/` and renders `IterateApp` from `_harness/`,
+imports `notebook.css` from `_harness/` and renders `NotebookApp` from `_harness/`,
 passing `iterations={ITERATIONS}` and `project={PROJECT}` from the notebook's
 own `iterations/index.ts`. For Next.js, add `'use client'` directive.
 
