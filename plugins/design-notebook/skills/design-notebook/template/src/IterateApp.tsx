@@ -264,31 +264,54 @@ export default function IterateApp() {
               marginBottom: 24,
               fontFamily: 'var(--nb-font-sans)',
               display: 'flex',
-              flexDirection: 'column',
-              gap: 6,
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
             }}>
-              <span style={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: 'var(--nb-text-dim)',
-                lineHeight: 1,
-                fontFamily: 'var(--nb-font-sans)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}>
-                Design Notebook
-              </span>
-              <h1 style={{
-                fontSize: 32,
-                fontWeight: 400,
-                color: PROJECT.title ? 'var(--nb-text)' : 'var(--nb-text-dim)',
-                letterSpacing: '-0.02em',
-                margin: 0,
-                lineHeight: 1.2,
-                fontFamily: "'Instrument Serif', serif",
-              }}>
-                {PROJECT.title || 'Untitled project'}
-              </h1>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--nb-text-dim)',
+                  lineHeight: 1,
+                  fontFamily: 'var(--nb-font-sans)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}>
+                  Design Notebook
+                  <a href="https://www.linkedin.com/in/idamadam/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400, opacity: 0.5, marginLeft: 6, color: 'inherit', textDecoration: 'none' }}>by Idam Adam</a>
+                </span>
+                <h1 style={{
+                  fontSize: 32,
+                  fontWeight: 400,
+                  color: PROJECT.title ? 'var(--nb-text)' : 'var(--nb-text-dim)',
+                  letterSpacing: '-0.02em',
+                  margin: 0,
+                  lineHeight: 1.2,
+                  fontFamily: "'Instrument Serif', serif",
+                }}>
+                  {PROJECT.title || 'Untitled project'}
+                </h1>
+              </div>
+              <a
+                href="https://google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="nb-feedback-link"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--nb-text)',
+                  fontFamily: 'var(--nb-font-sans)',
+                  textDecoration: 'none',
+                  padding: '6px 12px',
+                  border: '1px solid var(--nb-border)',
+                  borderRadius: 6,
+                  whiteSpace: 'nowrap',
+                  marginTop: 2,
+                }}
+              >
+                Share feedback
+              </a>
             </div>
 
             {renderEntry(latest, 'latest', latestIndex)}

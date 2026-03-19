@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useRef, useEffect } from 'react'
+import { type ReactNode, useState, useRef, useEffect, useCallback } from 'react'
 import type { Preset } from './types'
 
 const ResetIcon = () => (
@@ -33,6 +33,12 @@ export function StateExplorer({ presets, active, onSelect, onReset, triggerClass
     return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [open])
 
+  const clampToViewport = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.left < 16) el.style.right = `${rect.left - 16}px`
+  }, [])
+
   return (
     <div ref={wrapperRef} style={{ position: 'relative' }}>
       <button
@@ -43,7 +49,7 @@ export function StateExplorer({ presets, active, onSelect, onReset, triggerClass
         {triggerContent ?? 'states'}
       </button>
       {open && (
-        <div className="nb-state-explorer" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 50 }}>
+        <div ref={clampToViewport} className="nb-state-explorer" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 50 }}>
           <div className="nb-state-explorer-header">
             <span className="nb-state-explorer-title">State Explorer</span>
           </div>
