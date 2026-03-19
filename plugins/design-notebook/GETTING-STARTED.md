@@ -6,13 +6,23 @@ A skill for exploring UI concepts through rapid, intent-driven iteration. Each i
 
 Run these in the Claude Code chat:
 
-1. `/plugin marketplace add idamadam/skills`
-2. `/plugin install design-notebook@idam-skills`
-3. `/reload-plugins` to activate
+```
+/plugin marketplace add idamadam/skills
+```
+```
+/plugin install design-notebook@idam-skills
+```
+```
+/reload-plugins
+```
 
 Then ask:
-- "Set up an iteration notebook for this project"
-- `/design-notebook:design-notebook`
+```
+Set up a design notebook for this project
+```
+```
+/design-notebook
+```
 
 ## Other agents (Cursor, Codex, etc.)
 
