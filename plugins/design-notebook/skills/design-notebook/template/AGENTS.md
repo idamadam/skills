@@ -1,14 +1,20 @@
 # Design Notebook — Iteration Workflow
 
 A design iteration harness for exploring UI concepts through rapid,
-intent-driven variation. Each iteration lives on a vertical canvas
-with lightweight chrome showing what changed and why.
+intent-driven variation. The UI shows one active iteration at a time
+with a header bar for navigation and a collapsible filmstrip drawer
+for visual overview of all iterations.
 
 ## Workspace Structure
 
-Key files: `NotebookApp.tsx` (app shell), `chrome.tsx` (iteration wrapper),
+Key files: `NotebookApp.tsx` (app shell with header bar, filmstrip, and
+navigation), `chrome.tsx` (scaled content rendering + iteration wrapper),
 `state-explorer.tsx` (preset popover), `types.ts` (shared interfaces),
 `iterations/index.ts` (iteration registry + `PROJECT` metadata).
+
+**Navigation:** Arrow keys (left/right) move between iterations. Escape
+closes the filmstrip. The header bar has prev/next buttons, a filmstrip
+toggle, and the state explorer for the active iteration.
 
 ## Artifact Mode (Path C)
 
@@ -95,8 +101,8 @@ entry (not a group). The summary should reference what was picked.
 
 ### 4. Repeat
 
-The `ITERATIONS` array IS the history. Earlier entries stay
-visible above — the notebook is a scrollable timeline of decisions.
+The `ITERATIONS` array IS the history. Earlier entries are
+accessible via the filmstrip drawer and prev/next navigation.
 Never delete previous entries; append new ones.
 
 ## Semantic Diffs
@@ -147,10 +153,12 @@ into the iteration's `definition.ts` as the `FineTuning` field on
 `IterationDefinition`. Read the latest iteration's files for the
 exact pattern.
 
-## Decision Trail
+## Filmstrip & Decision Trail
 
-The decision trail is auto-generated from `config.summary` and
-`config.changes`. Write summaries as past-tense outcomes, not tasks:
+The filmstrip drawer shows scaled thumbnails of all iterations with
+change summaries. The decision trail is auto-generated from
+`config.summary` and `config.changes`. Write summaries as past-tense
+outcomes, not tasks:
 
 - **Single**: `'Switched to dark palette, warm neutrals'` (not `'Added dark mode'`)
 - **Group**: `'Tried 3 nav patterns: tabs, sidebar, floating'`
@@ -161,7 +169,7 @@ The decision trail is auto-generated from `config.summary` and
 **Any time you are about to edit a Content.tsx**, add `className="nb-working"`
 to that file's root `<div>` as your very first edit. This applies whether
 you are creating a new iteration or modifying an existing one. Save the
-file immediately — HMR will fire and show an indigo glow + dim so the
+file immediately — HMR will fire and show a shimmer + dim so the
 user knows which cell is being worked on.
 
 When **generating a new iteration**:

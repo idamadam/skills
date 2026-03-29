@@ -161,7 +161,8 @@ User picks a direction. Mark with `tag: 'picked'`, then generate next
 iteration as a single entry building on the pick.
 
 ### Repeat
-Append to ITERATIONS, never delete. The notebook is a scrollable timeline.
+Append to ITERATIONS, never delete. The notebook tracks all iterations
+via filmstrip navigation.
 
 ## Iteration Convention
 
@@ -229,9 +230,11 @@ Before editing any `Content.tsx`, add `className="nb-working"` to its
 root `<div>`. Save immediately — HMR shows an indigo shimmer so the user
 knows which cell is being worked on. Remove when done.
 
-## Decision Trail
+## Filmstrip & Decision Trail
 
-Write summaries as past-tense outcomes:
+The filmstrip drawer shows scaled thumbnails of all iterations. The
+decision trail is visible in the filmstrip as change summaries. Write
+summaries as past-tense outcomes:
 - Single: `'Switched to dark palette, warm neutrals'`
 - Group: `'Tried 3 nav patterns: tabs, sidebar, floating'`
 - Converge: `'Picked sidebar nav, dropped tabs'`

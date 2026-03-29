@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { IterationChrome } from './chrome'
+import { useState, useRef, useEffect } from 'react'
+import { ScaledContent } from './chrome'
 import { StateExplorer } from './state-explorer'
-import type { ChromeProps, Preset, IterationDefinition, IterationDefinitionEntry } from './types'
+import type { IterationDefinition, IterationDefinitionEntry } from './types'
 
 interface NotebookAppProps {
   iterations: IterationDefinitionEntry[]
@@ -14,77 +14,36 @@ function isGroup(entry: IterationDefinitionEntry): entry is { group: IterationDe
 
 const CONTENT_WIDTH = 1440
 const GROUP_GAP = 12
+const FILMSTRIP_CARD_WIDTH = 360
+const FILMSTRIP_GAP = 16
 
-function chromeFromDef(def: IterationDefinition): ChromeProps {
-  return {
-    label: def.config.label,
-    tag: def.config.tag,
-    prompt: def.config.prompt,
-    summary: def.config.summary,
-    changes: def.config.changes,
-  }
+function useContainerWidth(ref: React.RefObject<HTMLElement | null>) {
+  const [width, setWidth] = useState(CONTENT_WIDTH)
+  useEffect(() => {
+    if (!ref.current) return
+    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    ro.observe(ref.current)
+    return () => ro.disconnect()
+  }, [])
+  return width
 }
 
-/* -- Change pills (shown when a trail step is expanded) -- */
+/* -- Helpers -- */
 
-function ChangePills({ changes }: { changes?: string[] }) {
-  if (!changes || changes.length === 0) return null
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-      {changes.map((change, i) => {
-        const isAdd = change.startsWith('+ ')
-        const isRemove = change.startsWith('− ')
-        return (
-          <span key={i} style={{
-            fontSize: 11, padding: '1px 7px', borderRadius: 10,
-            background: isAdd ? 'rgba(21,128,61,0.06)' : isRemove ? 'rgba(185,28,28,0.06)' : 'rgba(0,0,0,0.03)',
-            color: isAdd ? 'rgb(21,128,61)' : isRemove ? 'rgb(160,50,50)' : 'var(--nb-text-dim)',
-            fontWeight: 450,
-          }}>
-            {change}
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
-/* -- Diffstat counters -- */
-
-function Diffstat({ changes }: { changes?: string[] }) {
-  if (!changes || changes.length === 0) return null
-  const adds = changes.filter(c => c.startsWith('+ ')).length
-  const removes = changes.filter(c => c.startsWith('− ')).length
-  if (adds === 0 && removes === 0) return null
-  return (
-    <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 400 }}>
-      {adds > 0 && <span style={{ color: 'rgba(21, 128, 61, 0.7)' }}>+{adds}</span>}
-      {adds > 0 && removes > 0 && <span style={{ color: 'var(--nb-text-dim)' }}>/</span>}
-      {removes > 0 && <span style={{ color: 'rgba(185, 28, 28, 0.7)' }}>−{removes}</span>}
-    </span>
-  )
-}
-
-/* -- Decision trail step summary -- */
-
-function shortName(summary: string): string {
-  return summary.split('—')[0].split('–')[0].trim()
-}
-
-function trailSummary(entry: IterationDefinitionEntry): string {
+function entrySummary(entry: IterationDefinitionEntry): string {
   if (isGroup(entry)) {
-    const picked = entry.group.find(d => d.config.tag === 'picked')
-    const names = entry.group.map(d => shortName(d.config.summary || d.config.label)).join(', ')
-    if (picked) {
-      return `Tried ${entry.group.length} directions: ${names}`
-    }
-    return `Exploring ${entry.group.length} directions: ${names}`
+    const names = entry.group.map(d => (d.config.summary || d.config.label).split('—')[0].split('–')[0].trim())
+    return `Exploring ${entry.group.length} directions: ${names.join(', ')}`
   }
-  const def = entry as IterationDefinition
-  return def.config.summary || def.config.label
+  return (entry as IterationDefinition).config.summary || (entry as IterationDefinition).config.label
 }
 
-function trailChanges(entry: IterationDefinitionEntry): string[] | undefined {
+function entryLabel(entry: IterationDefinitionEntry): string {
+  if (isGroup(entry)) return entry.group.map(d => d.config.label).join(' / ')
+  return (entry as IterationDefinition).config.label
+}
+
+function entryChanges(entry: IterationDefinitionEntry): string[] | undefined {
   if (isGroup(entry)) {
     const picked = entry.group.find(d => d.config.tag === 'picked')
     return (picked ?? entry.group[0]).config.changes
@@ -92,15 +51,96 @@ function trailChanges(entry: IterationDefinitionEntry): string[] | undefined {
   return (entry as IterationDefinition).config.changes
 }
 
+/* -- Icons -- */
+
+const SlidersIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="6" x2="20" y2="6" /><circle cx="8" cy="6" r="2" fill="currentColor" />
+    <line x1="4" y1="12" x2="20" y2="12" /><circle cx="16" cy="12" r="2" fill="currentColor" />
+    <line x1="4" y1="18" x2="20" y2="18" /><circle cx="11" cy="18" r="2" fill="currentColor" />
+  </svg>
+)
+
+const ChevronLeft = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+)
+
+const ChevronRight = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 6 15 12 9 18" />
+  </svg>
+)
+
+const FilmstripIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="5" width="5" height="14" rx="1" />
+    <rect x="9.5" y="5" width="5" height="14" rx="1" />
+    <rect x="17" y="5" width="5" height="14" rx="1" />
+  </svg>
+)
+
+/* -- Diffstat -- */
+
+function Diffstat({ changes }: { changes?: string[] }) {
+  if (!changes || changes.length === 0) return null
+  const adds = changes.filter(c => c.startsWith('+ ')).length
+  const removes = changes.filter(c => c.startsWith('− ')).length
+  if (adds === 0 && removes === 0) return null
+  return (
+    <span style={{ fontSize: 11, fontWeight: 400 }}>
+      {adds > 0 && <span style={{ color: 'rgba(21, 128, 61, 0.7)' }}>+{adds}</span>}
+      {adds > 0 && removes > 0 && <span style={{ color: 'var(--nb-text-dim)' }}>/</span>}
+      {removes > 0 && <span style={{ color: 'rgba(185, 28, 28, 0.7)' }}>−{removes}</span>}
+    </span>
+  )
+}
+
+/* -- Change pills -- */
+
+function ChangePills({ changes }: { changes?: string[] }) {
+  if (!changes || changes.length === 0) return null
+  const adds = changes.filter(c => c.startsWith('+ ')).map(c => c.slice(2))
+  const removes = changes.filter(c => c.startsWith('− ')).map(c => c.slice(2))
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 13, fontWeight: 450 }}>
+      {adds.length > 0 && (
+        <span style={{ color: 'rgb(21,128,61)' }}>+ {adds.join(', ')}</span>
+      )}
+      {removes.length > 0 && (
+        <span style={{ color: 'rgb(185,28,28)' }}>− {removes.join(', ')}</span>
+      )}
+    </div>
+  )
+}
 
 /* -- Main app -- */
 
 export default function NotebookApp({ iterations: ITERATIONS, project: PROJECT }: NotebookAppProps) {
   const [iterationStates, setIterationStates] = useState<Record<string, Record<string, unknown>>>({})
-  const [expandedHistoryIndex, setExpandedHistoryIndex] = useState<number | null>(null)
+  const [activeIndex, setActiveIndex] = useState(ITERATIONS.length - 1)
+  const [activeVariantIndex, setActiveVariantIndex] = useState(0)
+  const [expandedVariant, setExpandedVariant] = useState<string | null>(null)
+  const [filmstripOpen, setFilmstripOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const filmstripRef = useRef<HTMLDivElement>(null)
+  const containerWidth = useContainerWidth(containerRef)
 
-  const latest = ITERATIONS[ITERATIONS.length - 1]
-  const history = ITERATIONS.slice(0, -1)
+  const activeEntry = ITERATIONS[activeIndex]
+
+  // Scroll filmstrip to show active card
+  const scrollToActive = (index: number, instant = false) => {
+    if (!filmstripRef.current) return
+    const card = filmstripRef.current.children[index] as HTMLElement | undefined
+    if (card) card.scrollIntoView({ behavior: instant ? 'instant' : 'smooth', block: 'nearest', inline: 'center' })
+  }
+
+  // Scroll filmstrip to active card when activeIndex changes while open
+  useEffect(() => {
+    if (filmstripOpen) scrollToActive(activeIndex)
+  }, [activeIndex, filmstripOpen])
+
 
   const getState = (key: string, def: IterationDefinition) =>
     iterationStates[key] ?? def.defaultState
@@ -127,287 +167,281 @@ export default function NotebookApp({ iterations: ITERATIONS, project: PROJECT }
     }))
   }
 
-  const renderIteration = (def: IterationDefinition, stateKey: string, index: number, variant?: boolean, contentZoom?: number) => {
-    const state = getState(stateKey, def)
-    const activePreset = (state as any).activePreset ?? null
+  const goPrev = () => setActiveIndex(i => Math.max(0, i - 1))
+  const goNext = () => setActiveIndex(i => Math.min(ITERATIONS.length - 1, i + 1))
 
-    return (
-      <IterationChrome
-        key={stateKey}
-        chrome={chromeFromDef(def)}
-        index={index}
-        variant={variant}
-        contentZoom={contentZoom}
-        presets={def.presets}
-        activePreset={activePreset}
-        onPreset={(id) => handlePreset(stateKey, def, id)}
-        onReset={() => handleReset(stateKey, def)}
-        stateExplorerChildren={
-          def.FineTuning ? (
-            <def.FineTuning
-              state={state}
-              onChange={(patch) => updateState(stateKey, def, patch as Record<string, unknown>)}
-            />
-          ) : undefined
-        }
-      >
-        <def.Content state={state} />
-      </IterationChrome>
-    )
-  }
+  // Keyboard nav
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') goPrev()
+      if (e.key === 'ArrowRight') goNext()
+      if (e.key === 'Escape') {
+        setFilmstripOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
-  const renderEntry = (entry: IterationDefinitionEntry, keyPrefix: string, editorialIndex: number) => {
-    if (isGroup(entry)) {
-      const n = entry.group.length
-      const availableContent = CONTENT_WIDTH - GROUP_GAP * (n - 1)
-      const columnWidth = availableContent / n
-      const cardZoom = columnWidth / CONTENT_WIDTH
+  /* -- Render active content -- */
+
+  const renderActiveContent = () => {
+    const keyPrefix = `active-${activeIndex}`
+
+    if (isGroup(activeEntry)) {
+      const group = activeEntry.group
+      const variantIdx = Math.min(activeVariantIndex, group.length - 1)
+      const def = group[variantIdx]
+      const stateKey = `${keyPrefix}-${variantIdx}`
+      const state = getState(stateKey, def)
+
       return (
-        <div>
-          <div style={{ marginBottom: 8, fontFamily: 'var(--nb-font-sans)' }}>
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--nb-text-dim)', lineHeight: 1 }}>
-              {String(editorialIndex + 1).padStart(2, '0')}
-            </span>
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${n}, 1fr)`,
-            gap: GROUP_GAP,
-          }}>
-            {entry.group.map((def, colIndex) => (
-              <div key={colIndex} style={{ minWidth: 0, overflow: 'hidden' }}>
-                {renderIteration(def, `${keyPrefix}-${colIndex}`, editorialIndex, true, cardZoom)}
-              </div>
-            ))}
-          </div>
+        <div className="nb-content-card">
+          <def.Content state={state} />
         </div>
       )
     }
 
-    return renderIteration(entry, keyPrefix, editorialIndex)
-  }
-
-  const SlidersIcon = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6" /><circle cx="8" cy="6" r="2" fill="currentColor" />
-      <line x1="4" y1="12" x2="20" y2="12" /><circle cx="16" cy="12" r="2" fill="currentColor" />
-      <line x1="4" y1="18" x2="20" y2="18" /><circle cx="11" cy="18" r="2" fill="currentColor" />
-    </svg>
-  )
-
-  const renderContentWithStates = (def: IterationDefinition, stateKey: string, label?: string) => {
+    // Single iteration
+    const def = activeEntry as IterationDefinition
+    const stateKey = `active-${activeIndex}`
     const state = getState(stateKey, def)
-    const activePreset = (state as any).activePreset ?? null
 
     return (
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 2px 6px' }}>
-          {label && (
-            <span style={{ fontSize: 12, fontWeight: 450, color: 'var(--nb-text-muted)', fontFamily: 'var(--nb-font-sans)' }}>
-              {label}
-            </span>
-          )}
-          {def.presets.length > 0 && (
-            <StateExplorer
-              presets={def.presets}
-              active={activePreset}
-              onSelect={(id) => handlePreset(stateKey, def, id)}
-              onReset={() => handleReset(stateKey, def)}
-              triggerClassName={`nb-btn ${activePreset ? 'nb-btn--active' : ''}`}
-              triggerContent={<SlidersIcon />}
-            >
-              {def.FineTuning && (
-                <def.FineTuning
-                  state={state}
-                  onChange={(patch) => updateState(stateKey, def, patch as Record<string, unknown>)}
-                />
-              )}
-            </StateExplorer>
-          )}
-        </div>
-        <div className="nb-content-card">
-          <def.Content state={state} />
-        </div>
+      <div className="nb-content-card">
+        <def.Content state={state} />
       </div>
     )
   }
 
-  const renderHistoryContent = (entry: IterationDefinitionEntry, keyPrefix: string) => {
-    if (isGroup(entry)) {
-      const n = entry.group.length
-      return (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${n}, 1fr)`,
-          gap: GROUP_GAP,
-        }}>
-          {entry.group.map((def, colIndex) => (
-            <div key={colIndex} style={{ minWidth: 0, overflow: 'hidden' }}>
-              {renderContentWithStates(def, `${keyPrefix}-${colIndex}`, def.config.label)}
-            </div>
-          ))}
-        </div>
-      )
-    }
+  /* -- Render filmstrip -- */
 
-    return renderContentWithStates(entry as IterationDefinition, keyPrefix)
+  const renderFilmstrip = () => {
+    const scale = FILMSTRIP_CARD_WIDTH / CONTENT_WIDTH
+    const VARIANT_CARD_WIDTH = 240
+
+    const cards: React.ReactNode[] = []
+
+    ITERATIONS.forEach((entry, i) => {
+      const isActive = i === activeIndex
+      const group = isGroup(entry)
+
+      if (group) {
+        // Group: always render variants inside a shared container
+        cards.push(
+          <div key={`group-${i}`} className={`nb-filmstrip-group ${isActive ? 'nb-filmstrip-group--active' : ''}`}>
+            <div className="nb-filmstrip-group-label">
+              <span className="nb-filmstrip-card-index">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span>{entrySummary(entry)}</span>
+            </div>
+            <div className="nb-filmstrip-group-variants">
+              {entry.group.map((def, vi) => {
+                const isVariantActive = isActive && vi === activeVariantIndex
+                const state = getState(`filmstrip-${i}-${vi}`, def)
+                const isPicked = def.config.tag === 'picked'
+                const changes = def.config.changes
+                return (
+                  <div
+                    key={vi}
+                    className={`nb-filmstrip-card nb-filmstrip-card--variant ${isVariantActive ? 'nb-filmstrip-card--active' : ''}`}
+                    onClick={() => { setActiveIndex(i); setActiveVariantIndex(vi) }}
+                  >
+                    <div className="nb-filmstrip-card-label">
+                      <span>{def.config.summary || def.config.label}</span>
+                      {isPicked && <span className="nb-picked-badge">Picked</span>}
+                    </div>
+                    <div className="nb-filmstrip-card-preview">
+                      <ScaledContent scale={VARIANT_CARD_WIDTH / CONTENT_WIDTH}>
+                        <div className="nb-content-card">
+                          <def.Content state={state} />
+                        </div>
+                      </ScaledContent>
+                    </div>
+                    {changes && changes.length > 0 && (
+                      <div className="nb-filmstrip-card-meta">
+                        <ChangePills changes={changes} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      } else {
+        // Single iteration
+        const def = entry as IterationDefinition
+        const stateKey = `filmstrip-${i}`
+        const state = getState(stateKey, def)
+        const changes = def.config.changes
+
+        cards.push(
+          <div
+            key={i}
+            className={`nb-filmstrip-card ${isActive ? 'nb-filmstrip-card--active' : ''}`}
+            onClick={() => setActiveIndex(i)}
+          >
+            <div className="nb-filmstrip-card-label">
+              <span className="nb-filmstrip-card-index">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span>{entrySummary(entry)}</span>
+            </div>
+            <div className="nb-filmstrip-card-preview">
+              <ScaledContent scale={scale}>
+                <div className="nb-content-card">
+                  <def.Content state={state} />
+                </div>
+              </ScaledContent>
+            </div>
+            {changes && changes.length > 0 && (
+              <div className="nb-filmstrip-card-meta">
+                <ChangePills changes={changes} />
+              </div>
+            )}
+          </div>
+        )
+      }
+    })
+
+    return (
+      <div ref={filmstripRef} className="nb-filmstrip nb-scroll">
+        {cards}
+      </div>
+    )
   }
 
-  // Compute editorial indices for each entry
-  const entryIndices = ITERATIONS.map((_, i) => i)
-  const latestIndex = entryIndices.length - 1
+  /* -- Get active state explorer props -- */
+
+  const getActiveStateExplorerProps = () => {
+    if (isGroup(activeEntry)) {
+      const variantIdx = Math.min(activeVariantIndex, activeEntry.group.length - 1)
+      const def = activeEntry.group[variantIdx]
+      const stateKey = `active-${activeIndex}-${variantIdx}`
+      const state = getState(stateKey, def)
+      const activePreset = (state as any).activePreset ?? null
+      return {
+        def,
+        stateKey,
+        presets: def.presets,
+        activePreset,
+        hasFineTuning: !!def.FineTuning,
+        state,
+      }
+    }
+
+    const def = activeEntry as IterationDefinition
+    const stateKey = `active-${activeIndex}`
+    const state = getState(stateKey, def)
+    const activePreset = (state as any).activePreset ?? null
+    return {
+      def,
+      stateKey,
+      presets: def.presets,
+      activePreset,
+      hasFineTuning: !!def.FineTuning,
+      state,
+    }
+  }
+
+  const stateProps = getActiveStateExplorerProps()
+  const hasStateExplorer = stateProps.presets.length > 0 || stateProps.hasFineTuning
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, overflow: 'auto' }}>
-        <div style={{ padding: '36px 44px' }}>
-          {/* -- Latest iteration (prominent) -- */}
-          <div style={{ maxWidth: CONTENT_WIDTH, margin: '0 auto', marginBottom: 48 }}>
-            {/* Project context */}
-            <div style={{
-              marginBottom: 24,
-              fontFamily: 'var(--nb-font-sans)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--nb-text-dim)',
-                  lineHeight: 1,
-                  fontFamily: 'var(--nb-font-sans)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}>
-                  Design Notebook
-                  <a href="https://www.linkedin.com/in/idamadam/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400, opacity: 0.5, marginLeft: 6, color: 'inherit', textDecoration: 'none' }}>by Idam Adam</a>
-                </span>
-                <h1 style={{
-                  fontSize: 32,
-                  fontWeight: 400,
-                  color: PROJECT.title ? 'var(--nb-text)' : 'var(--nb-text-dim)',
-                  letterSpacing: '-0.02em',
-                  margin: 0,
-                  lineHeight: 1.2,
-                  fontFamily: "'Instrument Serif', serif",
-                }}>
-                  {PROJECT.title || 'Untitled project'}
-                </h1>
-              </div>
-              <a
-                href="https://forms.gle/tgWrQPEvzAF2Z7rw9"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="nb-feedback-link"
-                style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: 'var(--nb-text)',
-                  fontFamily: 'var(--nb-font-sans)',
-                  textDecoration: 'none',
-                  padding: '6px 12px',
-                  border: '1px solid var(--nb-border)',
-                  borderRadius: 6,
-                  whiteSpace: 'nowrap',
-                  marginTop: 2,
-                }}
-              >
-                Share feedback
-              </a>
+        <div>
+          {/* -- Chrome: header + filmstrip -- */}
+          <div className="nb-chrome">
+          <div className="nb-header-bar">
+            <div className="nb-project-banner">
+              <span>Design Notebook</span>
+              <span className="nb-project-banner-title">{PROJECT.title || 'Untitled'}</span>
             </div>
 
-            {renderEntry(latest, 'latest', latestIndex)}
-          </div>
+            <div className="nb-iteration-nav">
+              <button
+                className="nb-iteration-nav-btn"
+                onClick={goPrev}
+                disabled={activeIndex === 0}
+              >
+                <ChevronLeft />
+              </button>
 
-          {/* -- Decision trail -- */}
-            <div style={{ maxWidth: CONTENT_WIDTH, margin: '0 auto' }}>
-              <div style={{ maxWidth: 560, margin: '0 auto' }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: 'var(--nb-text-dim)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 12,
-                  fontFamily: 'var(--nb-font-sans)',
-                }}>
-                  Decision trail
-                </div>
-              </div>
-              {history.length === 0 ? (
-                <div style={{ maxWidth: 560, margin: '0 auto' }}>
-                  <span style={{
-                    fontSize: 13,
-                    color: 'var(--nb-text-dim)',
-                    fontFamily: 'var(--nb-font-sans)',
-                    }}>
-                    No decisions yet — iterations will appear here as you explore.
-                  </span>
-                </div>
-              ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {[...history].reverse().map((entry, i) => {
-                  const originalIndex = history.length - 1 - i
-                  const isExpanded = expandedHistoryIndex === originalIndex
-                  const changes = trailChanges(entry)
+              <span className="nb-iteration-nav-index">
+                {activeIndex + 1} of {ITERATIONS.length}
+              </span>
 
-                  return (
-                    <div key={originalIndex}>
-                      <div style={{ maxWidth: 560, margin: '0 auto' }}>
-                        <div
-                          onClick={() => setExpandedHistoryIndex(isExpanded ? null : originalIndex)}
-                          style={{
-                            fontSize: 14,
-                            color: 'var(--nb-text)',
-                            fontFamily: 'var(--nb-font-sans)',
-                            lineHeight: 1.7,
-                            cursor: 'pointer',
-                            padding: '3px 6px',
-                            margin: '0 -6px',
-                            borderRadius: 6,
-                            transition: 'background 0.15s ease',
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 6,
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                        >
-                          <span style={{
-                            fontSize: 8,
-                            color: 'var(--nb-border)',
-                            transition: 'transform 0.15s ease',
-                            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                            display: 'inline-block',
-                            flexShrink: 0,
-                          }}>
-                            ▶
-                          </span>
-                          <span>
-                            <span style={{ color: 'var(--nb-text-dim)', marginRight: 8, fontSize: 12 }}>
-                              {String(originalIndex + 1).padStart(2, '0')}
-                            </span>
-                            {trailSummary(entry)}
-                            <Diffstat changes={changes} />
-                          </span>
-                        </div>
-                      </div>
-                      {isExpanded && (
-                        <div style={{ padding: '8px 0 24px' }}>
-                          <div style={{ maxWidth: 560, margin: '0 auto 8px' }}>
-                            <ChangePills changes={changes} />
-                          </div>
-                          {renderHistoryContent(entry, `history-${originalIndex}`)}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <button
+                className="nb-iteration-nav-btn"
+                onClick={goNext}
+                disabled={activeIndex === ITERATIONS.length - 1}
+              >
+                <ChevronRight />
+              </button>
+
+              {/* Filmstrip toggle */}
+              <button
+                className={`nb-iteration-nav-btn ${filmstripOpen ? 'nb-iteration-nav-btn--active' : ''}`}
+                onClick={() => {
+                  const next = !filmstripOpen
+                  setFilmstripOpen(next)
+                  if (next) {
+                    requestAnimationFrame(() => scrollToActive(activeIndex, true))
+                  }
+                }}
+                title="Overview"
+              >
+                <FilmstripIcon />
+              </button>
+
+              <div className="nb-iteration-nav-divider" />
+
+              <span className="nb-iteration-nav-summary">
+                {entrySummary(activeEntry)}
+              </span>
+
+              {hasStateExplorer && (
+                <StateExplorer
+                  presets={stateProps.presets}
+                  active={stateProps.activePreset}
+                  onSelect={(id) => handlePreset(stateProps.stateKey, stateProps.def, id)}
+                  onReset={() => handleReset(stateProps.stateKey, stateProps.def)}
+                  direction="down"
+                  triggerClassName="nb-iteration-nav-btn"
+                  triggerContent={<SlidersIcon size={14} />}
+                >
+                  {stateProps.hasFineTuning && stateProps.def.FineTuning && (
+                    <stateProps.def.FineTuning
+                      state={stateProps.state}
+                      onChange={(patch) => updateState(stateProps.stateKey, stateProps.def, patch as Record<string, unknown>)}
+                    />
+                  )}
+                </StateExplorer>
               )}
             </div>
+
+            <a
+              href="https://forms.gle/tgWrQPEvzAF2Z7rw9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nb-project-banner-feedback"
+            >
+              Share feedback
+            </a>
+          </div>
+
+          {/* Filmstrip drawer */}
+          <div className={`nb-filmstrip-drawer ${filmstripOpen ? 'nb-filmstrip-drawer--open' : ''}`}>
+            {renderFilmstrip()}
+          </div>
+          </div>
+
+          <div ref={containerRef}>
+            {renderActiveContent()}
+          </div>
         </div>
       </div>
     </div>

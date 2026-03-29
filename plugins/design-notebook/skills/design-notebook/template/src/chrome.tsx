@@ -1,6 +1,36 @@
-import type { ReactNode } from 'react'
+import { useRef, useState, useEffect, type ReactNode } from 'react'
 import type { ChromeProps, Preset } from './types'
 import { StateExplorer } from './state-explorer'
+
+const DESIGN_WIDTH = 1440
+
+/** Renders children at DESIGN_WIDTH then applies transform:scale to fit the column. */
+export function ScaledContent({ scale, children }: { scale: number; children: ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    if (!innerRef.current) return
+    const ro = new ResizeObserver(([entry]) => setHeight(entry.borderBoxSize[0].blockSize))
+    ro.observe(innerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div style={{ height: height * scale, overflow: 'hidden' }}>
+      <div
+        ref={innerRef}
+        style={{
+          width: DESIGN_WIDTH,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
 
 interface IterationChromeProps {
   chrome: ChromeProps
@@ -27,35 +57,16 @@ const SlidersIcon = ({ size = 12 }: { size?: number }) => (
 )
 
 function Changes({ changes }: { changes: string[] }) {
+  const adds = changes.filter(c => c.startsWith('+ ')).map(c => c.slice(2))
+  const removes = changes.filter(c => c.startsWith('− ')).map(c => c.slice(2))
   return (
-    <div style={{ fontSize: 13, lineHeight: 1.4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-      {changes.map((change, i) => {
-        const isAdd = change.startsWith('+ ')
-        const isRemove = change.startsWith('− ')
-        return (
-          <span
-            key={i}
-            style={{
-              padding: '3px 10px',
-              borderRadius: 20,
-              background: isAdd
-                ? 'rgba(21, 128, 61, 0.06)'
-                : isRemove
-                  ? 'rgba(185, 28, 28, 0.06)'
-                  : 'rgba(0,0,0,0.03)',
-              color: isAdd
-                ? 'rgb(21, 128, 61)'
-                : isRemove
-                  ? 'rgb(160, 50, 50)'
-                  : 'var(--nb-text-dim)',
-              fontWeight: 450,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {change}
-          </span>
-        )
-      })}
+    <div style={{ fontSize: 13, lineHeight: 1.4, display: 'flex', flexWrap: 'wrap', gap: 8, fontWeight: 450, letterSpacing: '-0.01em' }}>
+      {adds.length > 0 && (
+        <span style={{ color: 'rgb(21, 128, 61)' }}>+ {adds.join(', ')}</span>
+      )}
+      {removes.length > 0 && (
+        <span style={{ color: 'rgb(185, 28, 28)' }}>− {removes.join(', ')}</span>
+      )}
     </div>
   )
 }
@@ -103,9 +114,13 @@ export function IterationChrome({ chrome, children, index, variant, contentZoom,
           </div>
           {hasChanges && <Changes changes={chrome.changes!} />}
         </div>
-        <div className="nb-content-card" style={contentZoom != null ? { zoom: contentZoom } : undefined}>
-          {children}
-        </div>
+        {contentZoom != null ? (
+          <ScaledContent scale={contentZoom}>
+            <div className="nb-content-card">{children}</div>
+          </ScaledContent>
+        ) : (
+          <div className="nb-content-card">{children}</div>
+        )}
       </div>
     )
   }
@@ -136,9 +151,13 @@ export function IterationChrome({ chrome, children, index, variant, contentZoom,
         </div>
         {hasChanges && <Changes changes={chrome.changes!} />}
       </div>
-      <div className="nb-content-card" style={contentZoom != null ? { zoom: contentZoom } : undefined}>
-        {children}
-      </div>
+      {contentZoom != null ? (
+        <ScaledContent scale={contentZoom}>
+          <div className="nb-content-card">{children}</div>
+        </ScaledContent>
+      ) : (
+        <div className="nb-content-card">{children}</div>
+      )}
     </div>
   )
 }

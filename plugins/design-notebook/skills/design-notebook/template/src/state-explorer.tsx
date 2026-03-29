@@ -16,9 +16,10 @@ interface StateExplorerProps {
   triggerClassName?: string
   triggerContent?: ReactNode
   children?: ReactNode
+  direction?: 'up' | 'down'
 }
 
-export function StateExplorer({ presets, active, onSelect, onReset, triggerClassName, triggerContent, children }: StateExplorerProps) {
+export function StateExplorer({ presets, active, onSelect, onReset, triggerClassName, triggerContent, children, direction = 'down' }: StateExplorerProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -49,7 +50,7 @@ export function StateExplorer({ presets, active, onSelect, onReset, triggerClass
         {triggerContent ?? 'states'}
       </button>
       {open && (
-        <div ref={clampToViewport} className="nb-state-explorer" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 50 }}>
+        <div ref={clampToViewport} className="nb-state-explorer" style={{ position: 'absolute', ...(direction === 'up' ? { bottom: '100%', marginBottom: 6 } : { top: '100%', marginTop: 6 }), right: 0, zIndex: 50 }}>
           <div className="nb-state-explorer-header">
             <span className="nb-state-explorer-title">State Explorer</span>
           </div>
