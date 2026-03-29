@@ -1,6 +1,6 @@
 {
   "name": "design-notebook",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Scaffold a design iteration notebook for exploring UI concepts through rapid, intent-driven variation.",
   "skills": ["./skills/design-notebook"]
 }
