@@ -618,7 +618,6 @@ body {
   white-space: nowrap;
   padding-right: 12px;
   margin-right: 0;
-  border-right: 1px solid var(--nb-border);
 }
 
 .nb-project-banner-title {
