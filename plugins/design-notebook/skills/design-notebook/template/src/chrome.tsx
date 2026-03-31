@@ -62,10 +62,10 @@ function Changes({ changes }: { changes: string[] }) {
   return (
     <div style={{ fontSize: 13, lineHeight: 1.4, display: 'flex', flexWrap: 'wrap', gap: 8, fontWeight: 450, letterSpacing: '-0.01em' }}>
       {adds.length > 0 && (
-        <span style={{ color: 'rgb(21, 128, 61)' }}>+ {adds.join(', ')}</span>
+        <span style={{ color: 'var(--nb-diff-add)' }}>+ {adds.join(', ')}</span>
       )}
       {removes.length > 0 && (
-        <span style={{ color: 'rgb(185, 28, 28)' }}>− {removes.join(', ')}</span>
+        <span style={{ color: 'var(--nb-diff-remove)' }}>− {removes.join(', ')}</span>
       )}
     </div>
   )
