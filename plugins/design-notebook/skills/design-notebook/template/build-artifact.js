@@ -53,8 +53,16 @@ writeFileSync(shimPath, [
 
 // ── Step 4: Bundle with esbuild ──
 
+function findEsbuild() {
+  try {
+    const bin = execSync('find /home -name esbuild -type f -path "*/bin/esbuild" 2>/dev/null | head -1', { encoding: 'utf-8', timeout: 5000 }).trim()
+    if (bin) return bin
+  } catch {}
+  return 'npx esbuild'
+}
+
 const esbuildCmd = [
-  'npx esbuild',
+  findEsbuild(),
   shimPath,
   '--bundle',
   '--format=esm',
