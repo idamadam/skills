@@ -26,14 +26,14 @@ jobs:
       - name: Package design-notebook skill
         run: |
           cd plugins/design-notebook/skills
-          zip -r "$GITHUB_WORKSPACE/design-notebook-${{ steps.version.outputs.version }}.zip" design-notebook/
+          zip -r "$GITHUB_WORKSPACE/design-notebook-${{ steps.version.outputs.version }}.skill" design-notebook/
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ steps.version.outputs.version }}" \
-            "design-notebook-${{ steps.version.outputs.version }}.zip" \
+            "design-notebook-${{ steps.version.outputs.version }}.skill" \
             --title "design-notebook ${{ steps.version.outputs.version }}" \
             --generate-notes \
             --notes-start-tag "" \

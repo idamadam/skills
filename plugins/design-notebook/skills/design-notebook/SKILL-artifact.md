@@ -8,9 +8,10 @@ description: Scaffold a design iteration notebook for exploring UI concepts
 
 # Design Notebook
 
-Scaffold and run a design iteration notebook — a vertical canvas where each
-iteration shows what changed and why, with side-by-side comparisons for
-divergent exploration and a decision trail that records every step.
+Scaffold and run a design iteration notebook — a focused canvas that shows
+one iteration at a time, with prev/next navigation, side-by-side comparisons
+for divergent exploration, and a collapsible filmstrip drawer for visual
+overview of every step.
 
 This notebook renders as a single artifact file. No dev server needed.
 
@@ -77,7 +78,8 @@ User picks a direction. Mark with `tag: 'picked'`, then generate next
 iteration as a single entry building on the pick.
 
 ### Repeat
-Append to ITERATIONS, never delete. The notebook is a scrollable timeline.
+Append to ITERATIONS, never delete. The notebook tracks all iterations
+via filmstrip navigation.
 
 ## Iteration Convention
 
@@ -139,12 +141,14 @@ that takes `{ state, onChange }` props.
 ## Working State
 
 Before editing any `Content.tsx`, add `className="nb-working"` to its
-root `<div>`. Save immediately — HMR shows an indigo shimmer so the user
-knows which cell is being worked on. Remove when done.
+root `<div>`. Save immediately — HMR shows a shimmer overlay so the user
+knows which iteration is being worked on. Remove when done.
 
-## Decision Trail
+## Filmstrip & History
 
-Write summaries as past-tense outcomes:
+The filmstrip is a collapsible drawer toggled via the "History" button.
+It shows scaled thumbnails of all iterations with change summaries on
+each card. Write summaries as past-tense outcomes:
 - Single: `'Switched to dark palette, warm neutrals'`
 - Group: `'Tried 3 nav patterns: tabs, sidebar, floating'`
 - Converge: `'Picked sidebar nav, dropped tabs'`
