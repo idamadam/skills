@@ -7,7 +7,7 @@ const DESIGN_WIDTH = 1440
 /** Renders children at DESIGN_WIDTH then applies transform:scale to fit the column. */
 export function ScaledContent({ scale, children }: { scale: number; children: ReactNode }) {
   const innerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
+  const [height, setHeight] = useState<number | null>(null)
 
   useEffect(() => {
     if (!innerRef.current) return
@@ -17,7 +17,7 @@ export function ScaledContent({ scale, children }: { scale: number; children: Re
   }, [])
 
   return (
-    <div style={{ height: height * scale, overflow: 'hidden' }}>
+    <div style={{ height: height != null ? height * scale : 'auto', overflow: 'hidden' }}>
       <div
         ref={innerRef}
         style={{
